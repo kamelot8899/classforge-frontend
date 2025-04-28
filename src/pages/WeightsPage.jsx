@@ -26,15 +26,15 @@ export default function HomePage() {
             <div class="container">
                 <h2>Classroom Allocation</h2>
                 <form id="allocationForm">
-                    <div class="form-group">
+                    <div className="form-group">
                         <label for="academicWeight">Academic Performance Weight:</label>
                         <input type="range" id="academicWeight" name="academicWeight" min="0" max="100" value="50" />
                     </div>
-                    <div class="form-group">
+                    <div className="form-group">
                         <label for="socialWeight">Social Integration Weight:</label>
                         <input type="range" id="socialWeight" name="socialWeight" min="0" max="100" value="50" />
                     </div>
-                    <div class="form-group">
+                    <div className="form-group">
                         <label for="wellBeingWeight">Well-Being Weight:</label>
                         <input type="range" id="wellBeingWeight" name="wellBeingWeight" min="0" max="100" value="50" />
                     </div>
