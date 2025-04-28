@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import "../styles/classforge.css";
 
-export default function HomePage() {
+export default function ResultPage() {
   return (
     <div>
       {/* Header Section */}
@@ -14,7 +14,7 @@ export default function HomePage() {
                     <ul className="nav-list">
                         <li><Link to="/home">Home</Link></li>
                         <li><Link to="/result">Dashboard</Link></li>
-                        <li><Link to="/weights">Dashboard</Link></li>
+                        <li><Link to="/weights">Allocation</Link></li>
                         <li><a href="contact.html">Contact</a></li>
                     </ul>
                 </nav>

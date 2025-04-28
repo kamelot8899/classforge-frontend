@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import "../styles/classforge.css";
 
-export default function HomePage() {
+export default function WeightsPage() {
   return (
     <div>
       {/* Header Section */}
