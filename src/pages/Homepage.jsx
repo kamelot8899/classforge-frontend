@@ -12,9 +12,9 @@ export default function HomePage() {
                 </div>
                 <nav className="navbar">
                     <ul className="nav-list">
-                        <li><a href="index.html">Home</a></li>
+                        <li><Link to="/home">Home</Link></li>
                         <li><Link to="/result">Dashboard</Link></li>
-                        <li><a href="allocation.html">Allocation</a></li>
+                        <li><Link to="/weights">Dashboard</Link></li>
                         <li><a href="contact.html">Contact</a></li>
                     </ul>
                 </nav>
