@@ -1,12 +1,17 @@
-import NetworkChart from "./components/NetworkChart";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import HomePage     from "./pages/HomePage";
+import ResultPage   from "./pages/ResultPage";
+import WeightsPage  from "./pages/WeightsPage";
 
-function App() {
+export default function App() {
   return (
-    <div style={{ height: "100vh" }}>
-      <NetworkChart />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/"          element={<HomePage />} />
+        <Route path="/result"    element={<ResultPage />} />   {/* dashboard */}
+        <Route path="/weights"   element={<WeightsPage />} />  {/* allocation */}
+        <Route path="*"          element={<Navigate to="/" />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;
-
