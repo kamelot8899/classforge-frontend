@@ -195,6 +195,14 @@
     border: 1px solid #ddd;
     border-radius: 5px;
   }
+
+  .student-list {
+    padding-left: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    max-width: 500px;
+  }
   
   /* Buttons */
   button {

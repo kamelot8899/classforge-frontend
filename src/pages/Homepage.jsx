@@ -26,7 +26,7 @@ export default function HomePage() {
             <div className="hero-content">
                 <h1>Optimize Your Classroom With AI</h1>
                 <p>Revolutionize class allocations with advanced social network analysis and multi-objective optimization.</p>
-                <a href="#services" class="cta-button">Discover How</a>
+                <Link to="/weights" className="cta-button">Discover How</Link>
             </div>
         </section>
 

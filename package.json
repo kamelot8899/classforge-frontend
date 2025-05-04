@@ -10,8 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "chart.js": "^4.4.9",
+    "cytoscape": "^3.32.0",
     "plotly.js": "^3.0.1",
     "react": "^19.0.0",
+    "react-cytoscapejs": "^2.0.0",
     "react-dom": "^19.0.0",
     "react-plotly.js": "^2.6.0",
     "react-router-dom": "^7.5.2"
