@@ -4,26 +4,32 @@ import CytoscapeComponent from "react-cytoscapejs";
 import "../styles/classforge.css";
 
 export default function ResultPage() {
-  // Sample data for demonstration. Replace with your actual data.
+  // Enhanced data for a richer graph visualization
   const [groups] = useState([
     { 
       name: "Group A", 
-      students: ["Alice", "Bob", "Charlie"], 
-      relations: "Alice-Bob, Bob-Charlie, Alice-Charlie" 
+      students: ["Alice", "Bob", "Charlie", "Diana", "Ethan", "Fiona", "George", "Hannah"],
+      relations: "Alice-Bob, Bob-Charlie, Alice-Charlie, Diana-Alice, Ethan-Charlie, Fiona-Alice, George-Bob, Hannah-Diana, Charlie-Diana, Ethan-George, Fiona-Hannah, Bob-Diana" 
     },
     { 
       name: "Group B", 
-      students: ["David", "Eva"], 
-      relations: "David-Eva" 
+      students: ["David", "Eva", "Frank", "Gina", "Henry", "Isabel", "Jack"],
+      relations: "David-Eva, Eva-Frank, Frank-Gina, Gina-Henry, Henry-Isabel, Isabel-Jack, Jack-David, David-Frank, Eva-Henry, Frank-Isabel" 
     },
     { 
       name: "Group C", 
-      students: ["Frank", "Grace", "Hank"], 
-      relations: "Frank-Grace, Grace-Hank" 
+      students: ["Frank", "Grace", "Hank", "Irene", "Jason", "Kate", "Leo", "Mia", "Noah"],
+      relations: "Frank-Grace, Grace-Hank, Hank-Irene, Irene-Jason, Jason-Kate, Kate-Leo, Leo-Mia, Mia-Noah, Noah-Frank, Frank-Jason, Grace-Leo, Hank-Noah" 
+    },
+    {
+      name: "Group D",
+      students: ["Olivia", "Peter", "Quinn", "Rachel", "Sam", "Taylor", "Uma", "Victor"],
+      relations: "Olivia-Peter, Peter-Quinn, Quinn-Rachel, Rachel-Sam, Sam-Taylor, Taylor-Uma, Uma-Victor, Victor-Olivia, Olivia-Rachel, Peter-Sam, Quinn-Victor"
     }
   ]);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState(0);
   const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
+  const cyRef = useRef(null);
   
   const handleGroupChange = (e) => {
     setSelectedGroupIndex(Number(e.target.value));
@@ -38,8 +44,8 @@ export default function ResultPage() {
       data: { 
         id: student, 
         label: student,
-        // Random position values for visual variety
-        color: `hsl(${Math.floor(Math.random() * 360)}, 70%, 75%)` 
+        // Random position values for visual variety with more vibrant colors
+        color: `hsl(${Math.floor(Math.random() * 360)}, ${70 + Math.floor(Math.random() * 20)}%, ${65 + Math.floor(Math.random() * 15)}%)` 
       }
     }));
 
@@ -55,7 +61,8 @@ export default function ResultPage() {
               id: `e${index}`,
               source,
               target,
-              weight: 1
+              // Add variable weights for more visual interest
+              weight: 1 + Math.floor(Math.random() * 3)
             }
           });
         }
@@ -65,7 +72,7 @@ export default function ResultPage() {
     setGraphData({ nodes, edges });
   }, [selectedGroup]);
 
-  // Cytoscape style configuration
+  // Enhanced Cytoscape style configuration
   const cytoscapeStylesheet = [
     {
       selector: 'node',
@@ -83,22 +90,35 @@ export default function ResultPage() {
     {
       selector: 'edge',
       style: {
-        'width': 2,
+        'width': 'data(weight)',
         'line-color': '#aaa',
-        'curve-style': 'bezier'
+        'curve-style': 'bezier',
+        'opacity': 0.8
+      }
+    },
+    {
+      selector: ':selected',
+      style: {
+        'background-color': '#ff0',
+        'line-color': '#f00',
+        'target-arrow-color': '#f00',
+        'source-arrow-color': '#f00'
       }
     }
   ];
 
-  // Cytoscape layout configuration
+  // Optimized Cytoscape layout configuration for better visualization
   const layout = {
-    name: 'cose', // force-directed layout, resembles the uploaded image
+    name: 'cose',
     fit: true,
     padding: 50,
     nodeRepulsion: 8000,
     nodeOverlap: 20,
     idealEdgeLength: 100,
-    randomize: true
+    randomize: true,
+    componentSpacing: 100,
+    animate: true,
+    refresh: 20
   };
 
   return (
@@ -132,7 +152,7 @@ export default function ResultPage() {
               <select id="groupSelect" value={selectedGroupIndex} onChange={handleGroupChange}>
                 {groups.map((group, index) => (
                   <option key={index} value={index}>
-                    {group.name}
+                    {group.name} ({group.students.length} students)
                   </option>
                 ))}
               </select>
@@ -149,19 +169,32 @@ export default function ResultPage() {
           </div>
 
           {/* Relationship Display (Part 3) with Network Graph */}
-          <div className="relationship-section" style={{ marginTop: "2rem" }}>
+        <div className="relationship-section" style={{ marginTop: "2rem" }}>
             <h3>Student Relationships in {selectedGroup.name}:</h3>
-            <div style={{ height: '300px', width: '80%', margin: '0 auto', border: '1px solid #ddd', borderRadius: '5px' }}>
-              {graphData.nodes.length > 0 && (
+            <div style={{ height: '400px', width: '80%', margin: '0 auto', border: '1px solid #ddd', borderRadius: '5px' }}>
+            {graphData.nodes.length > 0 && (
                 <CytoscapeComponent
-                  elements={[...graphData.nodes, ...graphData.edges]}
-                  stylesheet={cytoscapeStylesheet}
-                  layout={layout}
-                  style={{ width: '100%', height: '100%' }}
+                key={selectedGroupIndex} // Add this key prop to force re-render
+                elements={[...graphData.nodes, ...graphData.edges]}
+                stylesheet={cytoscapeStylesheet}
+                layout={layout}
+                style={{ width: '100%', height: '100%' }}
+                cy={(cy) => {
+                    cyRef.current = cy;
+                    
+                    // Run the layout again to ensure proper positioning
+                    cy.layout(layout).run();
+                    
+                    // Add event handlers
+                    cy.on('tap', 'node', function(evt) {
+                    const node = evt.target;
+                    console.log('Tapped node: ' + node.id());
+                    });
+                }}
                 />
-              )}
+            )}
             </div>
-          </div>
+        </div>
         </div>
       </section>
 
