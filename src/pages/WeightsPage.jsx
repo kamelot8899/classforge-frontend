@@ -10,7 +10,9 @@ export default function WeightsPage() {
     const [allocationMessage, setAllocationMessage] = useState("");
     const [datasetFile, setDatasetFile] = useState(null);
     const [uploadMessage, setUploadMessage] = useState("");
-    
+    const [collectionName, setCollectionName] = useState("");
+    const [isUploading, setIsUploading] = useState(false);
+     
     // Handle file selection for dataset upload
     const handleFileChange = (e) => {
       if (e.target.files && e.target.files[0]) {
@@ -21,23 +23,77 @@ export default function WeightsPage() {
     // Upload dataset file to the backend
     const handleDatasetUpload = async (e) => {
       e.preventDefault();
+      if (!collectionName) {
+        setUploadMessage("Please enter a collection name.");
+        return;
+      }
+      
       if (!datasetFile) {
         setUploadMessage("Please select a dataset file.");
         return;
       }
+      
+      setIsUploading(true);
+      setUploadMessage("Uploading...");
+      
       const formData = new FormData();
-      formData.append("dataset", datasetFile);
-  
+      formData.append("file", datasetFile);
+    
       try {
-        const response = await fetch("/api/upload-dataset", {
+        // Using the full URL instead of relative URL to avoid routing issues
+        const response = await fetch(`/api/upload_csv/${collectionName}`, {
           method: "POST",
-          body: formData,
+          body: formData
         });
-        const result = await response.json();
-        setUploadMessage(result.message || "Dataset uploaded and stored successfully.");
+        
+        // Handle redirects as in the script
+        if (response.redirected) {
+          window.location.href = response.url;
+          return;
+        }
+        
+        // Check if response is OK
+        if (!response.ok) {
+          // Try to read as text first so we can see what's actually being returned
+          const textContent = await response.text();
+          
+          // Try to parse as JSON if it looks like JSON
+          let errorData;
+          try {
+            if (textContent && textContent.trim()) {
+              errorData = JSON.parse(textContent);
+            }
+          } catch (jsonError) {
+            // Not valid JSON, use text content as is
+            throw new Error(`Upload failed: ${textContent || response.statusText}`);
+          }
+          
+          throw new Error(`Upload failed: ${JSON.stringify(errorData) || response.statusText}`);
+        }
+        
+        // Success case - first check if there is content
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          // Only try to parse JSON if that's what we're expecting
+          const text = await response.text();
+          if (text.trim()) {
+            const data = JSON.parse(text);
+            setUploadMessage(`✅ Upload successful: ${data.message || "Dataset uploaded"}`);
+          } else {
+            setUploadMessage("✅ Upload successful");
+          }
+        } else {
+          setUploadMessage("✅ Upload successful");
+        }
       } catch (error) {
-        console.error("Error uploading dataset:", error);
-        setUploadMessage("Error uploading dataset.");
+        console.error("Network error details:", error);
+        if (error.message === "Failed to fetch") {
+          setUploadMessage("❌ Error: Unable to connect to server. Please check if the server is running.");
+        } else {
+          setUploadMessage(`❌ Error: ${error.message}`);
+        }
+      } finally {
+        setIsUploading(false);
       }
     };
   
@@ -58,6 +114,11 @@ export default function WeightsPage() {
           },
           body: JSON.stringify(payload),
         });
+        
+        if (!response.ok) {
+          throw new Error(`Server responded with status: ${response.status}`);
+        }
+        
         const result = await response.json();
         setAllocationMessage(result.message || "Allocation successful and stored.");
         
@@ -65,7 +126,7 @@ export default function WeightsPage() {
         navigate("/result");
       } catch (error) {
         console.error("Error running allocation:", error);
-        setAllocationMessage("Error running allocation.");
+        setAllocationMessage(`Error running allocation: ${error.message}`);
       }
     };
   
@@ -94,18 +155,37 @@ export default function WeightsPage() {
             <h2>Upload Dataset</h2>
             <form onSubmit={handleDatasetUpload}>
               <div className="form-group">
-                <label htmlFor="datasetFile">Select Dataset File:</label>
+                <label htmlFor="collectionName">Collection Name:</label>
+                <input
+                  type="text"
+                  id="collectionName"
+                  name="collectionName"
+                  value={collectionName}
+                  onChange={(e) => setCollectionName(e.target.value)}
+                  placeholder="Enter collection name"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="datasetFile">Select Dataset File (CSV):</label>
                 <input
                   type="file"
                   id="datasetFile"
                   name="datasetFile"
-                  accept=".csv, application/json"
+                  accept=".csv"
                   onChange={handleFileChange}
+                  required
                 />
               </div>
-              <button type="submit">Upload Dataset</button>
+              <button type="submit" disabled={isUploading}>
+                {isUploading ? "Uploading..." : "Upload Dataset"}
+              </button>
             </form>
-            {uploadMessage && <p>{uploadMessage}</p>}
+            {uploadMessage && (
+              <div className={uploadMessage.includes("Error") ? "error-message" : "success-message"}>
+                {uploadMessage}
+              </div>
+            )}
           </div>
         </section>
   
@@ -125,6 +205,7 @@ export default function WeightsPage() {
                   value={academicWeight}
                   onChange={(e) => setAcademicWeight(Number(e.target.value))}
                 />
+                <span>{academicWeight}%</span>
               </div>
               <div className="form-group">
                 <label htmlFor="socialWeight">Social Integration Weight:</label>
@@ -137,6 +218,7 @@ export default function WeightsPage() {
                   value={socialWeight}
                   onChange={(e) => setSocialWeight(Number(e.target.value))}
                 />
+                <span>{socialWeight}%</span>
               </div>
               <div className="form-group">
                 <label htmlFor="wellBeingWeight">Well-Being Weight:</label>
@@ -149,6 +231,7 @@ export default function WeightsPage() {
                   value={wellBeingWeight}
                   onChange={(e) => setWellBeingWeight(Number(e.target.value))}
                 />
+                <span>{wellBeingWeight}%</span>
               </div>
               <button type="submit">Run Allocation</button>
             </form>
@@ -160,10 +243,10 @@ export default function WeightsPage() {
 
         {/* Footer */}
         <footer>
-            <div className="container">
-                <p>&copy; 2025 ClassForge. All rights reserved.</p>
-            </div>
+          <div className="container">
+            <p>&copy; 2025 ClassForge. All rights reserved.</p>
+          </div>
         </footer>
       </div>
-  );
+    );
 }
