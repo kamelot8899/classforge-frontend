@@ -13,89 +13,96 @@ const EDGE_COLORS = {
 };
 
 export default function ResultPage() {
-  const [groups] = useState([
-    {
-      name: "Class 1",
-      nodeUrl: "/api/nodes_part_1/Class1",
-      edgeUrl: "/api/edges_part_1/endpoint_1746674987"
-    },
-    {
-      name: "Class 2",
-      nodeUrl: "/api/nodes_part_2/Class2",
-      edgeUrl: "/api/edges_part_2/relation2"
-    },
-    {
-      name: "Class 3",
-      nodeUrl: "/api/nodes_part_3/Class3",
-      edgeUrl: "/api/edges_part_3/relation3"
-    },
-    {
-      name: "Class 4",
-      nodeUrl: "/api/nodes_part_4/Class4",
-      edgeUrl: "/api/edges_part_4/relation4"
-    }
-  ]);
-
-  const [selectedGroupIndex, setSelectedGroupIndex] = useState(0);
-  const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
+  const [clusters, setClusters] = useState([]);
+  const [selectedCluster, setSelectedCluster] = useState("");
+  const [allNodes, setAllNodes] = useState([]);
   const [allEdges, setAllEdges] = useState([]);
+  const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
   const [studentList, setStudentList] = useState([]);
   const [edgeTypeFilter, setEdgeTypeFilter] = useState("All");
 
-  const handleGroupChange = (e) => {
-    setSelectedGroupIndex(Number(e.target.value));
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [nodesRes, edgesRes] = await Promise.all([
+          fetch("/api/result_node_cluster"),
+          fetch("/api/result_edges_info")
+        ]);
+
+        if (!nodesRes.ok || !edgesRes.ok) {
+          throw new Error("API fetch failed");
+        }
+
+        const nodesData = await nodesRes.json();
+        const edgesData = await edgesRes.json();
+
+        if (!Array.isArray(nodesData) || !Array.isArray(edgesData)) {
+          throw new Error("API returned non-array data");
+        }
+
+        setAllNodes(nodesData);
+        setAllEdges(edgesData);
+
+        const foundClusters = [...new Set(nodesData.map(n => n.cluster_number))];
+        setClusters(foundClusters);
+        if (foundClusters.length > 0) {
+          setSelectedCluster(foundClusters[0]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch API data:", err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedCluster || !Array.isArray(allNodes) || !Array.isArray(allEdges)) return;
+
+    const nodes = allNodes.filter(n => n.cluster_number === selectedCluster);
+    const studentIds = new Set(nodes.map(n => n.id));
+
+    const edges = allEdges
+      .filter(e => studentIds.has(e.from)) // chỉ cần from là học sinh trong lớp
+      .map(e => ({
+        from: e.from.toString(),
+        to: e.to.toString(),
+        label: e.label || "",
+        color: EDGE_COLORS[e.label] || "#ccc"
+      }));
+
+    const graphNodes = nodes.map(n => ({
+      id: n.id.toString(),
+      label: n.label
+    }));
+
+    setStudentList(nodes.map(n => n.label));
+    setGraphData({ nodes: graphNodes, edges });
+  }, [selectedCluster, allNodes, allEdges]);
+
+  const handleClusterChange = (e) => {
+    setSelectedCluster(Number(e.target.value));
+    setEdgeTypeFilter("All");
   };
 
   const handleEdgeTypeChange = (e) => {
     const selected = e.target.value;
     setEdgeTypeFilter(selected);
-    if (selected === "All") {
-      setGraphData((prev) => ({ ...prev, edges: allEdges }));
-    } else {
-      const filtered = allEdges.filter((e) => e.label === selected);
-      setGraphData((prev) => ({ ...prev, edges: filtered }));
-    }
+
+    const clusterNodes = allNodes.filter(n => n.cluster_number === selectedCluster);
+    const studentIds = new Set(clusterNodes.map(n => n.id));
+
+    const filteredEdges = allEdges
+      .filter(e => studentIds.has(e.from)) // vẫn chỉ lọc theo from
+      .filter(e => selected === "All" || e.label === selected)
+      .map(e => ({
+        from: e.from.toString(),
+        to: e.to.toString(),
+        label: e.label || "",
+        color: EDGE_COLORS[e.label] || "#ccc"
+      }));
+
+    setGraphData(prev => ({ ...prev, edges: filteredEdges }));
   };
-
-  const selectedGroup = groups[selectedGroupIndex];
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const { nodeUrl, edgeUrl } = groups[selectedGroupIndex];
-
-      try {
-        const [nodesRes, edgesRes] = await Promise.all([
-          fetch(nodeUrl),
-          fetch(edgeUrl)
-        ]);
-
-        const nodesData = await nodesRes.json();
-        const edgesData = await edgesRes.json();
-
-        const students = nodesData.map(n => n.label);
-        setStudentList(students);
-
-        const nodes = nodesData.map(node => ({
-          id: node.id.toString(),
-          label: node.label
-        }));
-
-        const edges = edgesData.map(edge => ({
-          from: edge.from.toString(),
-          to: edge.to.toString(),
-          label: edge.label || "",
-          color: EDGE_COLORS[edge.label] || "#ccc"
-        }));
-
-        setAllEdges(edges);
-        setGraphData({ nodes, edges });
-      } catch (err) {
-        console.error("Failed to fetch group data:", err);
-      }
-    };
-
-    fetchData();
-  }, [selectedGroupIndex]);
 
   const edgeTypes = ["All", ...Array.from(new Set(allEdges.map(e => e.label)))];
 
@@ -123,16 +130,16 @@ export default function ResultPage() {
           <div className="dashboard-layout">
             <div className="dashboard-left">
               <div className="group-selection">
-                <label htmlFor="groupSelect"><strong>Select a Class:</strong></label>
-                <select id="groupSelect" value={selectedGroupIndex} onChange={handleGroupChange}>
-                  {groups.map((group, index) => (
-                    <option key={index} value={index}>{group.name}</option>
+                <label htmlFor="clusterSelect"><strong>Select a Class:</strong></label>
+                <select id="clusterSelect" value={selectedCluster} onChange={handleClusterChange}>
+                  {clusters.map((cluster, index) => (
+                    <option key={index} value={cluster}>{cluster}</option>
                   ))}
                 </select>
               </div>
 
               <div className="student-list">
-                <h3>Students in {selectedGroup.name}:</h3>
+                <h3>Students in Class {selectedCluster}:</h3>
                 <ul>
                   {studentList.map((student, index) => (
                     <li key={index}>{student}</li>
@@ -151,8 +158,12 @@ export default function ResultPage() {
             </div>
 
             <div className="dashboard-right">
-              <h3>Student Relationships in {selectedGroup.name}:</h3>
-              <GraphVis nodes={graphData.nodes} edges={graphData.edges} />
+              <h3>Student Relationships in Class {selectedCluster}:</h3>
+              {graphData.nodes.length > 0 ? (
+                <GraphVis nodes={graphData.nodes} edges={graphData.edges} />
+              ) : (
+                <p>No data to display for this class.</p>
+              )}
             </div>
           </div>
         </div>
