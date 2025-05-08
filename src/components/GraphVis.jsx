@@ -12,7 +12,7 @@ const GraphVis = ({ nodes, edges }) => {
     const options = {
       nodes: {
         shape: "dot",
-        size: 20,
+        size: 22,
         font: { size: 16 },
         borderWidth: 2
       },

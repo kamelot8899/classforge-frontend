@@ -120,41 +120,40 @@ export default function ResultPage() {
       <section id="dashboard">
         <div className="container">
           <h2>Dashboard</h2>
-          <div className="group-section">
-            <div className="group-selection">
-              <label htmlFor="groupSelect"><strong>Select a Class:</strong></label>
-              <select id="groupSelect" value={selectedGroupIndex} onChange={handleGroupChange}>
-                {groups.map((group, index) => (
-                  <option key={index} value={index}>
-                    {group.name}
-                  </option>
-                ))}
-              </select>
+          <div className="dashboard-layout">
+            <div className="dashboard-left">
+              <div className="group-selection">
+                <label htmlFor="groupSelect"><strong>Select a Class:</strong></label>
+                <select id="groupSelect" value={selectedGroupIndex} onChange={handleGroupChange}>
+                  {groups.map((group, index) => (
+                    <option key={index} value={index}>{group.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="student-list">
+                <h3>Students in {selectedGroup.name}:</h3>
+                <ul>
+                  {studentList.map((student, index) => (
+                    <li key={index}>{student}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="edge-filter">
+                <label htmlFor="edgeFilter"><strong>Filter by Relationship Type:</strong></label>
+                <select id="edgeFilter" value={edgeTypeFilter} onChange={handleEdgeTypeChange}>
+                  {edgeTypes.map((type, index) => (
+                    <option key={index} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="student-list">
-              <h3>Students in {selectedGroup.name}:</h3>
-              <ul>
-                {studentList.map((student, index) => (
-                  <li key={index}>{student}</li>
-                ))}
-              </ul>
+            <div className="dashboard-right">
+              <h3>Student Relationships in {selectedGroup.name}:</h3>
+              <GraphVis nodes={graphData.nodes} edges={graphData.edges} />
             </div>
-          </div>
-
-          <div className="relationship-section" style={{ marginTop: "2rem" }}>
-            <h3>Student Relationships in {selectedGroup.name}:</h3>
-
-            <div style={{ marginBottom: "1rem" }}>
-              <label htmlFor="edgeFilter"><strong>Filter by Relationship Type:</strong></label>
-              <select id="edgeFilter" value={edgeTypeFilter} onChange={handleEdgeTypeChange}>
-                {edgeTypes.map((type, index) => (
-                  <option key={index} value={type}>{type}</option>
-                ))}
-              </select>
-            </div>
-
-            <GraphVis nodes={graphData.nodes} edges={graphData.edges} />
           </div>
         </div>
       </section>
